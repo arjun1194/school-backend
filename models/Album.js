@@ -22,5 +22,5 @@ const Album  = db.define('albums', {
     },
 
 });
-console.log("hello world");
+
 module.exports = Album;

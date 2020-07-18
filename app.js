@@ -4,14 +4,14 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const indexRouter = require('./routes/index');
+const albumsRouter = require('./routes/albums');
 const usersRouter = require('./routes/users');
-
+const photosRouter = require('./routes/photos');
 
 
 
 const db = require('./config/database');
-require('./models/Album');
+require('./models/index');
 db.sync();
 
 
@@ -21,10 +21,15 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
 
+//routes
 
-app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/albums', albumsRouter);
+app.use('/photos', photosRouter);
 
+
+
+//error
 app.use((req,res,next)=>{
     let err = new Error('Not Found');
     err.status = 404;
