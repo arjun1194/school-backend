@@ -3,6 +3,7 @@ const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+app.use(cors());
 
 const albumsRouter = require('./routes/albums');
 const usersRouter = require('./routes/users');
@@ -15,7 +16,7 @@ require('./models/index');
 db.sync();
 
 
-app.use(cors());
+
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -36,7 +37,7 @@ app.use((req,res,next)=>{
 
     next(err);
 });
-app.use((error, req, res) => {
+app.use((error, req, res,next) => {
     res.status(error.status || 500).json({error: error.message || ''})
 });
 

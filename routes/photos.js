@@ -6,7 +6,7 @@ const uuid=require('uuid')
 const Photo = require('../models/Photo')
 const Album  = require('../models/Album');
 const s3 = require('../config/s3');
-
+const checkAuth = require('../middleware/check-auth');
 
 
 const storage =multer.memoryStorage({
@@ -18,12 +18,11 @@ const storage =multer.memoryStorage({
 const upload= multer({storage}).single('image')
 
 
-router.post('/upload',upload,(req,res,next)=>{
+router.post('/upload',checkAuth,upload,(req,res,next)=>{
     let albumId = req.query.albumId;
     Album
         .findByPk(albumId)
         .then(album=>{
-
             if(!album){res.status(404).json({message:'Album doesnt exist'})}
             else{
                 let myFile=req.file.originalname.split(".")
@@ -34,12 +33,23 @@ router.post('/upload',upload,(req,res,next)=>{
                     Body: req.file.buffer,
                     ACL:'public-read'
                 };
+
                 s3.upload(params,(error,data)=>{
-                    if(error){next(error);}
+                    if(error){res.status(error.statusCode).json({message:error.message})}
                     else{
                         new Photo({imageUrl:data.Location,storageId:data.Key,albumId:album.id})
                             .save()
-                            .then((photo)=>res.json({message:'Photo Uploaded Sucessfully',photoId:photo.id}))
+                            .then((photo)=>{
+
+                                if(album.coverImage===''){
+                                    album.update({coverImage:photo.imageUrl}).then(()=>{
+                                        res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
+                                    }).catch(err=>next(err));
+                                }
+                                else  res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
+
+
+                            })
                             .catch(err=>next(err.message))
                     }})
             }
@@ -53,21 +63,23 @@ router.post('/upload',upload,(req,res,next)=>{
 
 })
 
-router.delete('/delete/:photoId',(req,res,next)=>{
+router.delete('/delete/:photoId',checkAuth,(req,res,next)=>{
 
     Photo
         .findByPk(req.params.photoId)
         .then(photo=>{
-            const params = {
-                Bucket: 'namannewbucket',
-                Key: photo.storageId
-            };
-            s3.deleteObject(params, function(err, data) {
-                if (err){next(err)}
-                photo.destroy().then(()=>{
-                    res.json({message:'Photo was deleted!'})
-                }).catch(err=>next(err))
-            });
+            if(!photo)res.status(400).json({message:'No such Photo Exists'})
+            else{
+                const params = {Bucket: 'namannewbucket', Key: photo.storageId};
+                s3.deleteObject(params, function(err, data) {
+                    if(err){next(err)}
+                    photo
+                        .destroy()
+                        .then(()=>{res.json({message:'Photo was deleted!'})})
+                        .catch(err=>next(err))
+                });
+            }
+
         })
         .catch(err=>next(err))
 
