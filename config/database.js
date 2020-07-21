@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 
-const db = new Sequelize('school', 'root', 'password', {
-    host: 'localhost',
+const db = new Sequelize(process.env.MYSQL_DB_NAME, process.env.MYSQL_USERNAME, process.env.MYSQL_PASSWORD, {
+    host: process.env.MYSQL_HOST_NAME,
     dialect: 'mysql',
     pool: {
         max: 5,

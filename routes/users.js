@@ -26,7 +26,7 @@ router.post('/login', (req, res, next) => {
       .findOne({where:login})
       .then((user)=>{
         if(user){
-          const token = jwt.sign({name:user.firstName+' '+user.lastName, email: user.email}, 'secretkeyy', { expiresIn: '4h' });
+          const token = jwt.sign({name:user.firstName+' '+user.lastName, email: user.email}, process.env.JWT_SECRET, { expiresIn: '4h' });
           res.json({message:'login successfull',token})
         } else unAuthorized();
       }).catch(err=>next(err))

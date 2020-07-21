@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 app.use(cors());
 
+require('dotenv').config();
+
 const albumsRouter = require('./routes/albums');
 const usersRouter = require('./routes/users');
 const photosRouter = require('./routes/photos');

@@ -17,7 +17,7 @@ router.post('/create', checkAuth,(req,res,next)=>{
         .save()
         .then((album)=>{
             if(!album)res.status(400).json({message:'Invalid input'});
-            res.status(201).json({message:'Album Successfully Created!'})})
+            res.status(201).json({message:'Album Successfully Created!',album:album.id})})
         .catch(err=>{next(err)})
 });
 
