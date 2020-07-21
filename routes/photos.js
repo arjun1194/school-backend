@@ -20,46 +20,45 @@ const upload= multer({storage}).single('image')
 
 router.post('/upload',checkAuth,upload,(req,res,next)=>{
     let albumId = req.query.albumId;
-    Album
-        .findByPk(albumId)
-        .then(album=>{
-            if(!album){res.status(404).json({message:'Album doesnt exist'})}
-            else{
-                let myFile=req.file.originalname.split(".")
-                const fileType=myFile[myFile.length-1];
-                const params={
-                    Bucket:'namannewbucket',
-                    Key: `${uuid.v4()}`,
-                    Body: req.file.buffer,
-                    ACL:'public-read'
-                };
+    if(!req.file)res.status(401).json({message:'Please include a file first!'})
+    else{
+        Album
+            .findByPk(albumId)
+            .then(album=>{
+                if(!album){res.status(404).json({message:'Album doesnt exist'})}
+                else{
+                    let myFile=req.file.originalname.split(".")
+                    const fileType=myFile[myFile.length-1];
+                    const params={
+                        Bucket:'namannewbucket',
+                        Key: `${uuid.v4()}`,
+                        Body: req.file.buffer,
+                        ACL:'public-read'
+                    };
 
-                s3.upload(params,(error,data)=>{
-                    if(error){res.status(error.statusCode).json({message:error.message})}
-                    else{
-                        new Photo({imageUrl:data.Location,storageId:data.Key,albumId:album.id})
-                            .save()
-                            .then((photo)=>{
+                    s3.upload(params,(error,data)=>{
+                        if(error){res.status(error.statusCode).json({message:error.message})}
+                        else{
+                            new Photo({imageUrl:data.Location,storageId:data.Key,albumId:album.id})
+                                .save()
+                                .then((photo)=>{
 
-                                if(album.coverImage===''){
-                                    album.update({coverImage:photo.imageUrl}).then(()=>{
-                                        res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
-                                    }).catch(err=>next(err));
-                                }
-                                else  res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
-
-
-                            })
-                            .catch(err=>next(err.message))
-                    }})
-            }
-
-        })
-        .catch(err=>next(err))
+                                    if(album.coverImage===''){
+                                        album.update({coverImage:photo.imageUrl}).then(()=>{
+                                            res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
+                                        }).catch(err=>next(err));
+                                    }
+                                    else  res.json({message:'Photo Uploaded Successfully!',photoId:photo.id})
 
 
+                                })
+                                .catch(err=>next(err.message))
+                        }})
+                }
 
-
+            })
+            .catch(err=>next(err))
+    }
 
 })
 
